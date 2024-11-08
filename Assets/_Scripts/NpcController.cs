@@ -9,8 +9,19 @@ public enum NpcState
     Fugitivo
 }
 
+public enum NpcActions
+{
+    Wander,
+    Hide,
+    HideInteligent,
+    Flee,
+    Evade,
+    Persue
+}
+
 public class NpcController : MonoBehaviour
 {
+    [SerializeField] private NpcActions npcActions;
     [SerializeField] private NpcState npcState;
 
     [Header("Pegador stats")]
@@ -20,12 +31,14 @@ public class NpcController : MonoBehaviour
     public float fugitivoSpeed = 3f;
 
 
-    [SerializeField] private NavMeshAgent agent;
+    private NavMeshAgent agent;
     [SerializeField] private Transform target;
     private GameObject helper;
-    [SerializeField] private PlayerController targetController;
+     private PlayerController targetController;
     Vector3 wanderTarget = Vector3.zero;
     private GameObject point;
+    [SerializeField] bool coolDown = false;
+
 
     private void Start()
     {
@@ -50,16 +63,18 @@ public class NpcController : MonoBehaviour
         switch (npcState)
         {
             case NpcState.Pegador:
+                PegadorBehaviour();
                 break;
             case NpcState.Fugitivo:
+                FugitivoBehaviour();
                 break;
         }
-
 
         //Professor code
         if (!coolDown)
         {
-            if (!TargetInRange()) Wander();
+            if (!TargetInRange()) 
+                Wander();
             else
             {
                 if (CanSeeTarget() && CanSeeMe())
@@ -68,10 +83,40 @@ public class NpcController : MonoBehaviour
                     HideInteligent();
                     Invoke("CoolDown", 5f);
                 }
-                else Pursue();
+                else 
+                    Pursue();
             }
         }
     }
+
+    #region Pega pega methods
+
+    void PegadorBehaviour()
+    {
+        if (!TargetInRange())
+            Wander();
+        else
+        {
+            Pursue();
+        }
+    }
+
+    void FugitivoBehaviour()
+    {
+
+        Evade();
+        Hide();
+        Wander();
+    }
+
+    public void ChangeState(NpcState newNpcState)
+    {
+        if (npcState == newNpcState)
+            return;
+        npcState = newNpcState;
+    }
+
+    #endregion
 
     void Seek(Vector3 targetPos)
     {
@@ -87,6 +132,7 @@ public class NpcController : MonoBehaviour
     //Fuga
     void Flee(Vector3 targetPos)
     {
+        npcActions = NpcActions.Flee;
         Vector3 vetorFuga = transform.position - targetPos;
         agent.SetDestination(transform.position + vetorFuga);
         //helper.SetActive(true);
@@ -98,6 +144,7 @@ public class NpcController : MonoBehaviour
     //Passeio
     void Wander()
     {
+        npcActions = NpcActions.Wander;
         float wanderRadius = 10f;
         float wanderDistance = 10f;
         float wanderJitter = 1f;
@@ -124,6 +171,7 @@ public class NpcController : MonoBehaviour
 
     void Evade() 
     {
+        npcActions = NpcActions.Evade;
         Vector3 targetDir = target.transform.position - transform.position;
         float speeds = agent.speed + targetController.actualSpeed;
         float lookAhead = targetDir.magnitude / speeds;
@@ -132,10 +180,9 @@ public class NpcController : MonoBehaviour
     }
 
 
-
-
     void Pursue() 
     {
+        npcActions = NpcActions.Persue;
         Vector3 targetDir = target.transform.position - transform.position;
 
         // obtém o ângulo entre a direção do agente e a direção do alvo, transformada para o espaço local do agente        
@@ -147,7 +194,7 @@ public class NpcController : MonoBehaviour
         // Se o alvo estiver fora do campo de visão direto do agente (ângulo maior que 90) mas orientado quase na mesma direção (diferença de direção menor que 20), ou se o alvo estiver quase parado, o agente busca diretamente a posição do alvo."
         if((angleToTarget > 90 && relativeHeading < 20 || targetController.actualSpeed < 0.01f))
         {
-            Seek(target.position);
+            Seek(target.position); 
             return;
         }
 
@@ -176,12 +223,13 @@ public class NpcController : MonoBehaviour
             }
         }
         Seek(chosenSpot);
-
+        npcActions = NpcActions.Hide;
     }
 
     //Esconder inteligente
     void HideInteligent()
     {
+
         float distance = Mathf.Infinity;
         Vector3 chosenSpot = Vector3.zero;
         Vector3 chosenDirection = Vector3.zero;
@@ -214,6 +262,8 @@ public class NpcController : MonoBehaviour
         {
             point.transform.position = hit.point;
         }
+
+        npcActions = NpcActions.HideInteligent;
     }
 
 
@@ -244,7 +294,6 @@ public class NpcController : MonoBehaviour
         return false;
     }
 
-    bool coolDown = false;
     void CoolDown() { coolDown = false; }
     bool TargetInRange()
     {
