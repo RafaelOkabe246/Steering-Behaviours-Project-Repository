@@ -23,18 +23,33 @@ public class NpcController : MonoBehaviour
 {
     [SerializeField] private NpcActions npcActions;
     [SerializeField] private NpcState npcState;
+    public LayerMask npcLayer;
+
+    [SerializeField] private MeshRenderer mesh;
+
+    public float currentSpeed;
+
+    [Header("Game stats")]
+    public bool isPlaying;
 
     [Header("Pegador stats")]
     public float pegadorSpeed = 5f;
+    public float searchDistance = 8f;
+    private Color pegadorColor = Color.red;
 
     [Header("Fugitivo stats")]
     public float fugitivoSpeed = 3f;
-
+    public float evadeDistance = 10f;
+    private Color fugitivoColor = Color.green;
 
     private NavMeshAgent agent;
     [SerializeField] private Transform target;
+
+
     private GameObject helper;
-     private PlayerController targetController;
+    private PlayerController targetController;
+
+
     Vector3 wanderTarget = Vector3.zero;
     private GameObject point;
     [SerializeField] bool coolDown = false;
@@ -43,8 +58,8 @@ public class NpcController : MonoBehaviour
     private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        target = GameObject.FindGameObjectWithTag("Player").transform;
-        targetController = target.GetComponent<PlayerController>();
+        //target = GameObject.FindGameObjectWithTag("Player").transform;
+        //targetController = target.GetComponent<PlayerController>();
         
         helper = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         DestroyImmediate(helper.GetComponent<Collider>());
@@ -58,8 +73,12 @@ public class NpcController : MonoBehaviour
         point.gameObject.SetActive(false);
     }
 
+
     private void Update()
     {
+        if (!isPlaying)
+            return;
+
         switch (npcState)
         {
             case NpcState.Pegador:
@@ -71,53 +90,117 @@ public class NpcController : MonoBehaviour
         }
 
         //Professor code
-        if (!coolDown)
+        //if (!coolDown)
+        //{
+        //    if (!TargetInRange()) 
+        //        Wander();
+        //    else
+        //    {
+        //        if (CanSeeTarget() && CanSeeMe())
+        //        {
+        //            coolDown = true;
+        //            HideInteligent();
+        //            Invoke("CoolDown", 5f);
+        //        }
+        //        else 
+        //            Pursue();
+        //    }
+        //}
+    }
+
+    private void OnCollisionEnter(Collision other)
+    {
+        if (npcState == NpcState.Pegador)
+            return;
+
+        if (other.gameObject.TryGetComponent<NpcController>(out NpcController npcController))
         {
-            if (!TargetInRange()) 
-                Wander();
-            else
+            if (npcController == NpcManager.currentPegador)
             {
-                if (CanSeeTarget() && CanSeeMe())
-                {
-                    coolDown = true;
-                    HideInteligent();
-                    Invoke("CoolDown", 5f);
-                }
-                else 
-                    Pursue();
+                Debug.Log("Detected noc");
+
+                NpcManager.instance.ChangePegador(this);
             }
         }
     }
 
     #region Pega pega methods
 
+    public void SetIsPlaying(bool value)
+    {
+        isPlaying = value;
+    }
+
+
     void PegadorBehaviour()
     {
-        if (!TargetInRange())
+        searchDistance = 15f;
+
+        SearchTargets();
+
+
+        if (target == null || !TargetInRange())
+        {
             Wander();
-        else
+
+        }
+        else if(CanSeeTarget())
         {
             Pursue();
         }
+
     }
 
     void FugitivoBehaviour()
     {
-
+        target = NpcManager.currentPegador.transform;
         Evade();
-        Hide();
-        Wander();
+
+        if (!TargetInRange())
+        {
+            Wander();
+        }
+        else if(TargetInRange() && CanSeeMe())
+        {
+            if(!coolDown)
+            {
+                int i = Random.Range(0, 2);
+                if(i == 0)
+                {
+                    Evade();
+                }
+                else
+                {
+                    Flee(target.position);
+                }
+                coolDown = true;
+                Invoke("CoolDown", 5f);
+            }
+        }
+        
     }
 
     public void ChangeState(NpcState newNpcState)
     {
-        if (npcState == newNpcState)
-            return;
+
         npcState = newNpcState;
+        coolDown = true;
+        Invoke("CoolDown", 5f);
+        switch (npcState)
+        {
+            case NpcState.Pegador:
+                mesh.materials[0].color = pegadorColor;
+                break;
+            case NpcState.Fugitivo:
+                mesh.materials[0].color = fugitivoColor ;
+
+                break;
+        }
     }
 
     #endregion
 
+    #region Professor codes
     void Seek(Vector3 targetPos)
     {
         agent.SetDestination(targetPos);
@@ -172,10 +255,11 @@ public class NpcController : MonoBehaviour
     void Evade() 
     {
         npcActions = NpcActions.Evade;
-        Vector3 targetDir = target.transform.position - transform.position;
-        float speeds = agent.speed + targetController.actualSpeed;
-        float lookAhead = targetDir.magnitude / speeds;
+        Vector3 targetDir = transform.position - target.transform.position;
+        float speeds = agent.speed + target.GetComponent<NavMeshAgent>().speed;//targetController.actualSpeed;
+        float lookAhead = (targetDir.magnitude / speeds) + evadeDistance;
         Vector3 targetPred = target.transform.position + target.transform.forward * lookAhead;
+
         Seek(targetPred);
     }
 
@@ -191,14 +275,16 @@ public class NpcController : MonoBehaviour
         // obtém o ângulo entre a direção frontal do agente e a direção ao alvo (no espaço local do agente)
         float angleToTarget = Vector3.Angle(transform.forward, transform.TransformVector(targetDir));
 
+        NavMeshAgent targetAgent = target.GetComponent<NavMeshAgent>();
+
         // Se o alvo estiver fora do campo de visão direto do agente (ângulo maior que 90) mas orientado quase na mesma direção (diferença de direção menor que 20), ou se o alvo estiver quase parado, o agente busca diretamente a posição do alvo."
-        if((angleToTarget > 90 && relativeHeading < 20 || targetController.actualSpeed < 0.01f))
+        if((angleToTarget > 90 && relativeHeading < 20 || targetAgent.speed < 0.01f))//targetController.actualSpeed < 0.01f))
         {
             Seek(target.position); 
             return;
         }
 
-        float speeds = agent.speed + targetController.actualSpeed;
+        float speeds = agent.speed + targetAgent.speed;//targetController.actualSpeed;
         float lookAhead = targetDir.magnitude / speeds;
 
         Vector3 targetPred = target.transform.position + target.transform.forward * lookAhead;
@@ -266,8 +352,53 @@ public class NpcController : MonoBehaviour
         npcActions = NpcActions.HideInteligent;
     }
 
+    #endregion
 
     #region Detection_methods
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.DrawWireSphere(transform.position, searchDistance) ;
+    }
+    Transform newTarget;
+
+    void SearchTargets()
+    {
+        RaycastHit[] hits = Physics.SphereCastAll(transform.position, searchDistance, Vector3.right, 0, npcLayer, QueryTriggerInteraction.UseGlobal);
+        float distance = Mathf.Infinity;
+        if (hits.Length == 0)
+            return;
+
+        foreach (RaycastHit hit in hits)
+        {
+            float newCheckDistance = Vector3.Distance(transform.position, hit.collider.gameObject.transform.position);
+            if (newCheckDistance < distance && hit.collider.gameObject != this.gameObject)
+            {
+                distance = newCheckDistance;
+                newTarget = hit.transform;
+            }
+
+        }
+
+
+        //for (int i = 0; i < hits.Length; i++)
+        //{
+        //    float newCheckDistance = Vector3.Distance(transform.position, hits[i].collider.gameObject.transform.position);
+        //    if ( newCheckDistance < distance && hits[i].collider.gameObject.layer == npcLayer
+        //        && hits[i].collider.gameObject != this.gameObject)
+        //    {
+        //        distance = newCheckDistance;
+        //        newTarget = hits[i].transform;
+        //    }
+        //}
+
+        if (newTarget != this.transform && newTarget != null)
+        {
+            target = newTarget;
+
+        }
+    }
+
     bool CanSeeTarget()
     {
         RaycastHit hit;
@@ -275,7 +406,7 @@ public class NpcController : MonoBehaviour
         float lookAngle = Vector3.Angle(rayToTarget, transform.forward);
         if (lookAngle < 60 && Physics.Raycast(transform.position, rayToTarget, out hit))
         {
-            if (hit.collider.gameObject.tag == "Player")
+            if (hit.collider.gameObject.transform == target)
             {
                 return true;
             }
