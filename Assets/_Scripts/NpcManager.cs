@@ -15,18 +15,6 @@ public class NpcManager : MonoBehaviour
     {
         instance = this;
     }
-    private void OnEnable()
-    {
-        GameplayController.instance.onTimerEnded += EliminateCurrentPegador;
-        GameplayController.instance.onTimerEnded += CheckNPCs;
-    }
-
-    private void OnDisable()
-    {
-        GameplayController.instance.onTimerEnded -= EliminateCurrentPegador;
-        GameplayController.instance.onTimerEnded -= CheckNPCs;
-
-    }
 
     public void ChangePegador(NpcController newPegador)
     {
@@ -78,9 +66,17 @@ public class NpcManager : MonoBehaviour
         newNpc.isPlaying = true;
     }
 
+    public void OnTimerEnded()
+    {
+        EliminateCurrentPegador();
+        CheckNPCs();
+
+    }
+
     private void EliminateCurrentPegador()
     {
         currentPegador.SetIsPlaying(false);
+       // currentPegador.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);    
     }
 
     private void CheckNPCs()
@@ -89,10 +85,22 @@ public class NpcManager : MonoBehaviour
         {
             if (npcs[i].isPlaying == true)
             {
+                ChangePegador(npcs[i]);
                 return;
             }
         }
 
+        //currentPegador.mesh.materials[0].color = currentPegador.winnerColor;
+        currentPegador.SetWinnerColor();
+
         GameplayController.instance.TriggerEndGame();
+
+        foreach (NpcController npc in npcs)
+        {
+            if(npc != currentPegador)
+            {
+                npc.gameObject.SetActive(false);
+            }
+        }
     }
 }

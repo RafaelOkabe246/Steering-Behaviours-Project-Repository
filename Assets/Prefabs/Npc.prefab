@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6268146732990311010}
   - component: {fileID: 4786516195241908359}
-  - component: {fileID: 2896052631486913880}
   - component: {fileID: 1487208749680564745}
   - component: {fileID: 4740614292764915945}
   - component: {fileID: 1174783985505708957}
@@ -56,28 +55,18 @@ MonoBehaviour:
     m_Bits: 8
   mesh: {fileID: 745923516532520527}
   currentSpeed: 0
-  pegadorSpeed: 5
+  isPlaying: 0
+  winnerColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  notPlayColor: {r: 0, g: 0, b: 0, a: 1}
+  pegadorSpeed: 8
   searchDistance: 8
+  pegadorColor: {r: 1, g: 0, b: 0, a: 1}
   fugitivoSpeed: 3
   evadeDistance: 10
+  fugitivoColor: {r: 0, g: 1, b: 0, a: 1}
+  agent: {fileID: 1487208749680564745}
   target: {fileID: 0}
   coolDown: 0
---- !u!114 &2896052631486913880
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2053838942277987761}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 844ff6f154906a548918a3f1c1f95fe7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gameEvent: {fileID: 11400000, guid: e5706ebfde85f72479da6e63676f3fd1, type: 2}
-  onEventTriggered:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!195 &1487208749680564745
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -87,7 +76,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 2053838942277987761}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.5
+  m_Radius: 0.09
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
@@ -99,7 +88,7 @@ NavMeshAgent:
   m_Height: 1
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
+  m_ObstacleAvoidanceType: 2
 --- !u!136 &4740614292764915945
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -148,7 +137,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 80
   m_CollisionDetection: 0
 --- !u!1 &7990952920251899730
 GameObject:

@@ -25,24 +25,26 @@ public class NpcController : MonoBehaviour
     [SerializeField] private NpcState npcState;
     public LayerMask npcLayer;
 
-    [SerializeField] private MeshRenderer mesh;
+    public MeshRenderer mesh;
 
     public float currentSpeed;
 
     [Header("Game stats")]
     public bool isPlaying;
+    public Color winnerColor = Color.yellow;
+    public Color notPlayColor = Color.gray;
 
     [Header("Pegador stats")]
     public float pegadorSpeed = 5f;
     public float searchDistance = 8f;
-    private Color pegadorColor = Color.red;
+    [SerializeField] private Color pegadorColor = Color.red;
 
     [Header("Fugitivo stats")]
     public float fugitivoSpeed = 3f;
     public float evadeDistance = 10f;
-    private Color fugitivoColor = Color.green;
+    [SerializeField] private Color fugitivoColor = Color.green;
 
-    private NavMeshAgent agent;
+    [SerializeField] private NavMeshAgent agent;
     [SerializeField] private Transform target;
 
 
@@ -110,7 +112,7 @@ public class NpcController : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        if (npcState == NpcState.Pegador)
+        if (npcState == NpcState.Pegador || coolDown)
             return;
 
         if (other.gameObject.TryGetComponent<NpcController>(out NpcController npcController))
@@ -129,8 +131,15 @@ public class NpcController : MonoBehaviour
     public void SetIsPlaying(bool value)
     {
         isPlaying = value;
+        if (!value)
+            mesh.materials[0].color = notPlayColor;
     }
 
+    public void SetWinnerColor()
+    {
+        mesh.materials[0].color = winnerColor;
+
+    }
 
     void PegadorBehaviour()
     {
@@ -139,14 +148,13 @@ public class NpcController : MonoBehaviour
         SearchTargets();
 
 
-        if (target == null || !TargetInRange())
-        {
-            Wander();
-
-        }
-        else if(CanSeeTarget())
+         if(!coolDown)
         {
             Pursue();
+        }
+        else
+        {
+            Wander();
         }
 
     }
@@ -174,7 +182,7 @@ public class NpcController : MonoBehaviour
                     Flee(target.position);
                 }
                 coolDown = true;
-                Invoke("CoolDown", 5f);
+                Invoke("CoolDown", 3f);
             }
         }
         
@@ -185,13 +193,17 @@ public class NpcController : MonoBehaviour
 
         npcState = newNpcState;
         coolDown = true;
-        Invoke("CoolDown", 5f);
+        Invoke("CoolDown", 3f);
         switch (npcState)
         {
             case NpcState.Pegador:
+                agent.speed = pegadorSpeed;
+
                 mesh.materials[0].color = pegadorColor;
                 break;
             case NpcState.Fugitivo:
+                agent.speed = fugitivoSpeed;
+
                 mesh.materials[0].color = fugitivoColor ;
 
                 break;

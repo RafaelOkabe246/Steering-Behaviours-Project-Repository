@@ -2295,6 +2295,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   startEvent: {fileID: 11400000, guid: ee99efb8848696648b2acd15eac27805, type: 2}
   npcPego: {fileID: 11400000, guid: e5706ebfde85f72479da6e63676f3fd1, type: 2}
+  maxTimer: 60
+  time: 0
 --- !u!1001 &1381465530
 PrefabInstance:
   m_ObjectHideFlags: 0

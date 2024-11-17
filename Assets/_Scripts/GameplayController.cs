@@ -1,21 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using TMPro;
 public class GameplayController : MonoBehaviour
 {
     public static GameplayController instance;
     public GameEvent startEvent;
-    public GameEvent npcPego;
-
-    public delegate void OnTimerEnded();
-    public OnTimerEnded onTimerEnded;
-
-    public delegate void OnGameEnded();
-    public OnGameEnded onGameEnded;
+    public GameEvent endTimer;
+    //public GameEvent onGameEnded;
 
     public float maxTimer = 60;
     [SerializeField]private float time = 0;
+    public TextMeshProUGUI timerText;
+    public TextMeshProUGUI winnerText;
 
     private bool IsGameRunning;
 
@@ -31,11 +28,13 @@ public class GameplayController : MonoBehaviour
         if (!IsGameRunning)
             return;
         time += Time.deltaTime;
+
         if(time >= maxTimer)
         {
-            onTimerEnded.Invoke();
+            endTimer.TriggerListener(this, "");
+            time = 0;
         }
-
+        timerText.text = $"Time: {time}";
     }
 
     public void OnStartGameplay(string npcQuantity)
@@ -48,6 +47,9 @@ public class GameplayController : MonoBehaviour
 
     public void TriggerEndGame()
     {
-        onGameEnded.Invoke();
+        //onGameEnded.TriggerListener(this,"");
+        winnerText.text = "Winner: " + NpcManager.currentPegador.name;
+
+
     }
 }
