@@ -9781,7 +9781,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   startEvent: {fileID: 11400000, guid: ee99efb8848696648b2acd15eac27805, type: 2}
   endTimer: {fileID: 11400000, guid: 48c7f78637b3ab94a995e605d6f2b43d, type: 2}
-  maxTimer: 3
+  maxTimer: 60
   time: 0
   timerText: {fileID: 512302216}
   winnerText: {fileID: 1826988411}

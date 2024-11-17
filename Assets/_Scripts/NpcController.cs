@@ -112,13 +112,15 @@ public class NpcController : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        if (npcState == NpcState.Pegador || coolDown)
+        if (npcState == NpcState.Pegador )
             return;
 
         if (other.gameObject.TryGetComponent<NpcController>(out NpcController npcController))
         {
             if (npcController == NpcManager.currentPegador)
             {
+                if (coolDown)
+                    return;
                 Debug.Log("Detected noc");
 
                 NpcManager.instance.ChangePegador(this);
@@ -170,8 +172,8 @@ public class NpcController : MonoBehaviour
         }
         else if(TargetInRange() && CanSeeMe())
         {
-            if(!coolDown)
-            {
+            //if(!coolDown)
+            //{
                 int i = Random.Range(0, 2);
                 if(i == 0)
                 {
@@ -181,9 +183,9 @@ public class NpcController : MonoBehaviour
                 {
                     Flee(target.position);
                 }
-                coolDown = true;
-                Invoke("CoolDown", 3f);
-            }
+                //coolDown = true;
+              //  Invoke("CoolDown", 3f);
+            //}
         }
         
     }
